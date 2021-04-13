@@ -1,0 +1,6 @@
+- hosts: webserver
+  tasks:
+  - name: 'copy file index.html'
+    copy:
+      src: website/
+      dest: /var/www/{{ domain }}

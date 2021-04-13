@@ -1,0 +1,18 @@
+- hosts: webserver
+  become: yes
+  tasks:
+
+  - name: 'apt-get update'
+    apt:
+      update_cache: yes
+      cache_valid_time: 3600
+  
+  - name: 'install lighttpd'
+    apt: 
+      name: ['lighttpd']
+      state: latest
+
+  - name: 'restart lighttpd'
+    systemd: 
+      name: lighttpd
+      state: restarted
