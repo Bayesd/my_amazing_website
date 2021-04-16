@@ -2,12 +2,318 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Index</title>
+    <title>Leos inlämningsuppgift</title>
 </head>
 <body>
 <main>
-  <h1>Hello World!</h1>
-  <p>Testing</p>
+  <p style="color: red; font-weight: bold">>>>>>  gd2md-html alert:  ERRORs: 0; WARNINGs: 1; ALERTS: 6.</p>
+<ul style="color: red; font-weight: bold"><li>See top comment block for details on ERRORs and WARNINGs. <li>In the converted Markdown or HTML, search for inline alerts that start with >>>>>  gd2md-html alert:  for specific instances that need correction.</ul>
+
+<p style="color: red; font-weight: bold">Links to alert messages:</p><a href="#gdcalert1">alert1</a>
+<a href="#gdcalert2">alert2</a>
+<a href="#gdcalert3">alert3</a>
+<a href="#gdcalert4">alert4</a>
+<a href="#gdcalert5">alert5</a>
+<a href="#gdcalert6">alert6</a>
+
+<p style="color: red; font-weight: bold">>>>>> PLEASE check and correct alert issues and delete this message and the inline alerts.<hr></p>
+
+
+<h1>Inlämningsuppgift, Automationsramverk</h1>
+
+
+<h3>Leo Möller</h3>
+
+
+<h1>Del 1- Frågor</h1>
+
+
+<h3>1.1. Vad för typ av historia kan man se i ett verktyg såsom Jenkins?</h3>
+
+
+<p>
+Build historik, d.v.s. historik som visar information om ett Jenkins-jobb varje gång det körs.
+</p>
+<h3>1.2. Vad för typ av historia kan man se i ett verktyg såsom Git?</h3>
+
+
+<p>
+Versionshistorik, d.v.s. information om Git repository:t som kan hämtas med kommandot git log.
+</p>
+<h3>1.3. Vad är en pipeline i Jenkins?</h3>
+
+
+<p>
+Pipeline i Jenkins är ett sätt att konfigurera ett jobb i jenkins. Pipelines skrivs i språket Groovy och olika delar som ingår i bygge, testning delas in i olika steg/stages.
+</p>
+<h3>1.4. Beskriv vad Jenkins är samt alternativ till Jenkins</h3>
+
+
+<p>
+Jenkins är ett automatiseringsverktyg som används för att  integrera olika verktyg som används i kedjan. Via Jenkins så kan vi koppla ihop så att en push till GitHub startar en process där vi testar, 
+</p>
+<h3>1.5. Beskriv vad Ansible är samt alternativ till Ansible</h3>
+
+
+<p>
+Ansible är ett så kallat Configuration Management verktyg som används för att automatisera konfigureringar, i s.k. playbooks, så att de endast behöver skrivas vid ett tillfälle och sedan återanvändas. Alternativ till ansible är Puppet, Chef och Salt,  
+</p>
+<p>
+  
+</p>
+<h1>Del 2 - Ansible mot en webbserver</h1>
+
+
+<p>
+Jag har 2 webbservrar med Debian, den ena kommer att agera webbserver där jag kör hemsidan ifrån, den andra kallar jag för ansible servern och det är därifrån jag kommer att köra ansible playbooks.
+</p>
+<p>
+För att kunna köra ansible playbooks och deploya hemsidan på webserver så använder jag mig av ssh-nycklar. Jag börjar med att generera ett nyckelpar som root-användare på min ansible server.
+</p>
+
+
+
+<pre class="prettyprint">ssh-keygen -t rsa -b 4096 -C "root@46.101.27.252"</pre>
+
+
+<p>
+Detta genererar två filer, en som heter “id_rsa” och innehåller den privata nyckeln för användaren och en som heter “id_rsa.pub” som innehåller den publika nyckeln. Den publika nyckeln kopierar jag över till filen “authorized_keys” på webbservernDen privata nyckeln gör jag ingenting med i detta steget.
+</p>
+<p>
+Nästa steg är att uppdatera apt och installera ansible på ansible-servern.
+</p>
+
+
+
+<pre class="prettyprint">apt-get update
+apt install ansible</pre>
+
+
+<p>
+Nu skapar jag en filstruktur för mitt project som ser ut på följande vis.
+</p>
+
+
+
+<pre class="prettyprint">.
+└── project
+    ├── inventory.yml
+    ├── playbooks
+    │   ├── lighttpd.yml
+    │   ├── sync_site.yml
+    │   └── website
+    │       └── index.html
+    └── run.sh</pre>
+
+
+<p>
+Filen run.sh är gör jag även körbar med 
+</p>
+
+
+
+<pre class="prettyprint">chmod +x run.sh</pre>
+
+
+<p>
+Jag öppnar därefter filen med vim och ger instruktioner för vilka playbooks ansible ska köra.
+</p>
+
+
+
+<pre class="prettyprint">ansible-playbook -i inventory.yml playbooks/lighttpd.yml
+ansible-playbook -i inventory.yml playbooks/sync_site.yml</pre>
+
+
+<p>
+Därefter redigerar jag min inventory.yml fil. I denna filen ska jag skriva in vilken host jag vill ansluta till med playbooken, detta blir min Lighttpd server samt vilka variabler jag vill använda i projektet, om några. För detta projektet krävs det inte mycket.
+</p>
+
+
+
+<pre class="prettyprint">webserver:
+  hosts:
+    138.68.129.223
+  vars:
+    domain: html
+    ansible_user: root
+    ansible_connection: ssh
+    ansible_ssh_private_key_file: ~/.ssh/id_rsa</pre>
+
+
+<p>
+De tre sista variablerna som börjar med “ansible_”  kallas inte av de playbooks som jag skriver utan används av ansible för att utföra ssh inloggningen i bakgrunden.<br>De säger att jag vill ansluta som root användare till maskinen med ip 138.68.129.223 över ssh och säger även vart min privata ssh nyckel ligger på maskinen som kör ansible koden.<br>Den publika ssh nyckeln ligger på maskinen med ip adressen som anges under hosts.
+</p>
+<p>
+Nästa steg är att konfigurera installationen av Lighttpd genom ansible playbooken på Lighttpd-servern. Detta gör jag i lighttpd.yml filen. 
+</p>
+
+
+
+<pre class="prettyprint">- hosts: webserver
+  become: yes
+  tasks:
+
+  - name: 'apt-get update'
+    apt:
+      update_cache: yes
+      cache_valid_time: 3600
+  
+  - name: 'install lighttpd'
+    apt: 
+      name: ['lighttpd']
+      state: latest
+
+  - name: 'restart lighttpd'
+    systemd: 
+      name: lighttpd
+      state: restarted</pre>
+
+
+<p>
+Först hämtar jag hosts variabeln och kallar den webserver. Därefter säger jag att jag vill bli root användare med rad två. Efter det har jag tre tasks. Första tasken uppdaterar apt på Lighttpd servern. Detta hade kunnat göras med ett shell script istället:
+</p>
+
+
+
+<pre class="prettyprint">- name: 'apt-get update'
+  shell: 'apt-get update'</pre>
+
+
+<p>
+Fördelen med att använda apt är att det är en modul i ansible och således finns det finesser med det alternativet. I just denna punkten spelar det ingen roll men i de kommande stegen hade det gjort det. Det har delvis att göra med felmeddelandena som dyker upp ifall det skulle bli något problem när playbooken körs som jag förstår det.
+</p>
+<p>
+Nästa task använder apt-modulen i ansible för att installera den senaste versionen apt har registrerad för ansible.
+</p>
+<p>
+Jag lade även in den sista tasken ifall att lighttpd servicen redan skulle vara installera men inaktiv på lighttpd-servern. Det försäkrar att Lighttpd kommer att starta om varje gång jag kör denna playbooken.
+</p>
+<p>
+Jag gjorde även en playbook för att kunna uppdatera hemsidan, sync_site.yml. 
+</p>
+
+
+
+<pre class="prettyprint">- hosts: webserver
+  tasks:
+  - name: 'copy file index.html'
+    copy:
+      src: website/
+      dest: /var/www/{{ domain }}</pre>
+
+
+<p>
+I denna tas enbart en kopia av allt som ligger i “website”-directory:t och läggs i destinationen /var/www/html på Lighttpd-servern. {{ domain }} hämtar värdet för domain variabeln, som definierats i inventory.yml.
+</p>
+<p>
+Slutligen skapar jag även en enkel “hello world” html sida i index.html men eftersom det inte är viktigt för uppgiften tar jag inte upp koden här.
+</p>
+<p>
+Jag tror att jag vid detta steget initierade git i min project-directory, skapade ett GitHub repo och pushade koden dit.
+</p>
+<p>
+Eftersom min run.fil var körbar kunde jag, när jag stod i min “project” mapp i terminalen köra min kod enbart genom att skriva 
+</p>
+
+
+
+<pre class="prettyprint">./run.sh</pre>
+
+
+<p>
+Om jag då går in på IP adressen som ser jag min hemsida<br><br>
+
+<p id="gdcalert1" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image1.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert2">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+<img src="images/image1.png" width="" alt="alt_text" title="image_tooltip">
+
+</p>
+<h1>Del 2 - Github, Jenkins mot en webbserver</h1>
+
+
+<p>
+För att installera Jenkins på min webbserver krävs några steg extra eftersom Jenkins kräver att Java finns installerat på maskinen. Jag har följt instruktionerna på denna sidan för att installera jenkins och konfigurera Jenkins: <a href="https://phoenixnap.com/kb/install-jenkins-on-debian-10">https://phoenixnap.com/kb/install-jenkins-on-debian-10</a>.
+</p>
+<p>
+Eftersom min webbläsare har svensk inställning installerade jag locale-pluginen så att jag kunde ändra språk till engelska. Jag valde även de plugins som hade med GitHub att göra, i övrigt bara rekommenderade plugins. Jag gick sedan in på “New Item” och valde Freestyle project och började med att länka mitt GitHub projekt.
+</p>
+<p>
+
+
+<p id="gdcalert2" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image2.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert3">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+<img src="images/image2.png" width="" alt="alt_text" title="image_tooltip">
+
+</p>
+<p>
+Viktigt med den sista “/” här för att Jenkins ska hamna rätt i projektet.<br>Nästa steg var att konfigurera Source Code Management.
+</p>
+<p>
+
+
+<p id="gdcalert3" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image3.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert4">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+<img src="images/image3.png" width="" alt="alt_text" title="image_tooltip">
+
+</p>
+<p>
+Jag lade in den privata ssh nyckeln, id_rsa, från jenkins användaren på Jenkinsservern här genom att trycka på “Add” under “Credentials”. Där valde jag “SSH Username with private key” och bockade i “Enter directly” för att få upp ett ställe att klistra in den privata nyckeln.
+</p>
+<p>
+
+
+<p id="gdcalert4" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image4.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert5">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+<img src="images/image4.png" width="" alt="alt_text" title="image_tooltip">
+
+</p>
+<p>
+Som Build Trigger bockade jag i “GitHub hook trigger for GITScm polling” vilket jag antar öppnar upp subdomänen “/github-webhook/” för jobbet men jag är inte säker på vad den gör.
+</p>
+<p>
+
+
+<p id="gdcalert5" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image5.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert6">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+<img src="images/image5.png" width="" alt="alt_text" title="image_tooltip">
+
+</p>
+<p>
+Slutligen lade jag in en “Execute Shell” funktion under Build steget för att kunna köra ansible genom Jenkins.
+</p>
+
+
+
+<pre class="prettyprint">ANSIBLE_HOST_KEY_CHECKING=False</pre>
+
+
+<p>
+Gör att ssh inloggningen inte frågar om passphrasen till ssh nyckeln. Om det promptet kommer så kommer jobbet inte att gå igenom via Jenkins. <br>Detta går även att ändra i ansibles konfigurationsfil, men det bästa sättet borde vara att lägga in raden som finns i konfigurationsfilen i en konfigurationsfil som skickas med i projektet i en templates mapp, eftersom det är där ansible letar efter konfigurationsfiler.<br>Jag har inte gjort det här utan nöjer mig med att skicka med kommandot med jenkins och köra det innan jag kör run.sh, det funkar alldeles utmärkt.<br>Jag bifogar en pdf över hela Jenkinsjobbet med rapporten.<br><br>När jag nu har gjort klart i Jenkins så har jag GitHub kvar att konfigurera. <br>Eftersom jag använder ssh adresserna så behöver jag lägga in min publika nyckel antingen global på mitt GitHub konto eller lokalt i repot. Jag väljer att lägga det globalt. Jag går då in i de globala inställningarna och väljer “SSH and GPG keys” för att kunna skapa en ny SSH-nyckel och kopiera in innehållet i filen id_rsa.pub från jenkins användaren på Jenkinsservern.
+</p>
+<p>
+Därefter går jag tillbaka till mitt repo och går in i repots inställningar och väljer “Webhooks” och “Add webhoook”.
+</p>
+<p>
+
+
+<p id="gdcalert6" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image6.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert7">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
+
+
+<img src="images/image6.png" width="" alt="alt_text" title="image_tooltip">
+
+</p>
+<p>
+Detta är mina inställningar för webhooken. 
+</p>
+<p>
+Jag gör en förändring i min index.html fil, commitar och pushar förändringen.<br>Resultatet kan ses på http://46.101.27.252/
+</p>
 </main>
 
 </body>
