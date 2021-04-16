@@ -191,6 +191,19 @@ Om jag då går in på IP adressen som ser jag min hemsida \
 
 För att installera Jenkins på min webbserver krävs några steg extra eftersom Jenkins kräver att Java finns installerat på maskinen. Jag har följt instruktionerna på denna sidan för att installera jenkins och konfigurera Jenkins: [https://phoenixnap.com/kb/install-jenkins-on-debian-10](https://phoenixnap.com/kb/install-jenkins-on-debian-10).
 
+Jag behöver skapa SSH nyckel för jenkins användare på jenkins servern eftersom jenkins inte kör som root användare.
+
+
+```
+su jenkins
+ssh-keygen -t rsa -b 4096 -C "jenkins@46.101.27.252"
+```
+
+
+Första raden gör att jag blir jenkins användare och andra raden genererar id_rsa och id_rsa.pub i jenkinsanvändarens ~/.ssh mapp. 
+
+Jag kopierar innehållet i id_rsa.pub och går över till Lighttpd servern och kopierar in nyckeln i ~/.ssh/authorized_keys så att jenkins har åtkonst till Lighttpd-servern via SSH.
+
 Eftersom min webbläsare har svensk inställning installerade jag locale-pluginen så att jag kunde ändra språk till engelska. Jag valde även de plugins som hade med GitHub att göra, i övrigt bara rekommenderade plugins. Jag gick sedan in på “New Item” och valde Freestyle project och började med att länka mitt GitHub projekt.
 
 
